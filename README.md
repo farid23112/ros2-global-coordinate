@@ -129,44 +129,62 @@ $$
 
 dengan $s$ adalah jarak antara roda kiri dan kanan (m).
 
-### 3. Pembaruan pose global (*dead reckoning*)
+### 3. Pembaruan Posisi dan Orientasi Robot
 
-Untuk mengurangi galat pendekatan selama satu langkah, posisi diperbarui
-menggunakan orientasi tengah:
+Posisi robot diperbarui menggunakan metode *odometri* berdasarkan perpindahan linear dan perubahan orientasi selama satu langkah iterasi.
 
-$$
-\theta_{\mathrm{mid}} = \theta_k + \frac{\Delta\theta}{2}
-$$
+Sudut tengah selama perpindahan:
 
 $$
-x_{k+1} = x_k + \Delta d\cos(\theta_{\mathrm{mid}})
+\theta_{\text{mid}} = \theta_k + \frac{\Delta\theta}{2}
+$$
+
+Pembaruan koordinat posisi:
+
+$$
+x_{k+1} = x_k + \Delta d\cos(\theta_{\text{mid}})
 $$
 
 $$
-y_{k+1} = y_k + \Delta d\sin(\theta_{\mathrm{mid}})
+y_{k+1} = y_k + \Delta d\sin(\theta_{\text{mid}})
+$$
+
+Pembaruan orientasi dengan pembatasan sudut:
+
+$$
+\theta_{k+1} =
+\begin{cases}
+\theta_k+\Delta\theta-2\pi,
+& \theta_k+\Delta\theta > \pi,\\
+\theta_k+\Delta\theta+2\pi,
+& \theta_k+\Delta\theta < -\pi,\\
+\theta_k+\Delta\theta,
+& \text{otherwise}.
+\end{cases}
+$$
+
+Pembatasan ini menjaga orientasi robot tetap berada pada rentang **−π ≤ θ < π**, dengan asumsi perubahan sudut pada setiap iterasi tidak melebihi satu putaran penuh.
+
+### 4. Transformasi Koordinat Lokal ke Global
+
+Waypoint dalam koordinat lokal ditransformasikan ke koordinat global berdasarkan posisi dan orientasi awal robot.
+
+$$
+x_g = x_0 + x_l \cos(\theta_0) - y_l \sin(\theta_0)
 $$
 
 $$
-\theta_{k+1} = \operatorname{wrap}(\theta_k+\Delta\theta)
+y_g = y_0 + x_l \sin(\theta_0) + y_l \cos(\theta_0)
 $$
 
-Fungsi $\operatorname{wrap}$ membatasi sudut ke rentang $[-\pi,\pi]$.
+**Keterangan**
 
-### 4. Transformasi waypoint lokal ke global
-
-Waypoint ditentukan dalam koordinat lokal relatif terhadap pose awal
-$(x_0,y_0,\theta_0)$. Transformasinya:
-
-# \$\$ \begin{bmatrix} x_g\\ y_g \end{bmatrix}
-
-\begin{bmatrix} x_0\\ y_0 \end{bmatrix} + \begin{bmatrix} \cos\theta_0 &
--\sin\theta_0\\ \sin\theta_0 & \cos\theta_0 \end{bmatrix}
-\begin{bmatrix} x_l\\ y_l \end{bmatrix} \$\$
-
-- $(x_l,y_l)$: waypoint dalam koordinat lokal.
-- $(x_g,y_g)$: waypoint dalam koordinat global.
-- $(x_0,y_0,\theta_0)$: pose robot ketika pengendali mulai berjalan.
-
+| Simbol | Deskripsi |
+|---|---|
+| (x<sub>l</sub>, y<sub>l</sub>) | Waypoint dalam koordinat lokal |
+| (x<sub>g</sub>, y<sub>g</sub>) | Waypoint dalam koordinat global |
+| (x<sub>0</sub>, y<sub>0</sub>) | Posisi awal robot |
+| θ<sub>0</sub> | Orientasi awal robot (radian) |
 ### 5. Kecepatan roda dari inverse kinematics
 
 Node `inverse_kin` menerima kecepatan linear $v$ dan kecepatan sudut
@@ -334,16 +352,6 @@ Gazebo.
 - Hasil posisi merupakan estimasi, bukan ground truth dari Gazebo.
 - Kesesuaian topic aktuator harus diverifikasi untuk model robot yang
   digunakan.
-
-## Kontribusi Kelompok
-
-Isi nama anggota dan perannya sebelum repository dikumpulkan:
-
-| Anggota   | Peran                                             |
-|-----------|---------------------------------------------------|
-| Anggota 1 | Konsep, teori, dan rumus                          |
-| Anggota 2 | Implementasi ROS 2, pengujian, dan dokumentasi    |
-| Anggota 3 | Menjalankan dan mendemonstrasikan simulasi Gazebo |
 
 ## Lisensi
 
